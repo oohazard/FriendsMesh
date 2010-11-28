@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<bobjim:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+					xmlns:bit101="com.bit101.components.*"
+					xmlns:bobjim="com.bobjim.components.*" 
+					addedToStage="onComplete()"
+>
+	
+	<fx:Metadata>
+		[SWF(width="500", height="480", backgroundColor="#00ffff")]
+	</fx:Metadata>
+
+	
+	<bit101:VBox x="10" y="10" spacing="10">
+		<bit101:HBox x="100" y="40" >
+			<bit101:Label text="Enter Name:" width="100" />
+			<bit101:InputText id="login" />
+			<bit101:PushButton id="loginButton" label="Login" click="{onLoginClicked()}"/>
+		</bit101:HBox>
+		
+		<bit101:HBox x="100" y="40">
+			<bit101:Label text="Me:" width="100" />
+			<bit101:InputText id="message" />
+			<bit101:PushButton label="Say" click="{sayHi(message.text)}"/>
+		</bit101:HBox>
+		
+		<bit101:TextArea id="log"/>
+		
+	</bit101:VBox>
+	
+	<fx:Script>
+		<![CDATA[
+			import agkanaatha.p2p.test.FriendsMeshTest;
+		
+			private var friendsMesh : FriendsMeshTest;
+				
+			private function onComplete() : void
+			{
+				friendsMesh = new FriendsMeshTest();
+				friendsMesh.dataReceived.add(messageReceived);
+			}
+			
+			private function messageReceived(message : String, appUserId : String, peerId :String) : void
+			{
+				log.text += message + " from " + appUserId + "(" + peerId +  ")";
+			}
+			
+			private function onLoginClicked() : void
+			{
+				if (login.text != "")
+				{
+					friendsMesh.initialize(login.text);
+					loginButton.mouseEnabled = false;
+				}
+			}
+				
+			private function sayHi(message : String):void
+			{
+				friendsMesh.broadcast(message);
+			}
+		]]>
+	</fx:Script>
+	
+	
+</bobjim:Application>
