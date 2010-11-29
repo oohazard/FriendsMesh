@@ -2,7 +2,6 @@
 <bobjim:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
 					xmlns:bit101="com.bit101.components.*"
 					xmlns:bobjim="com.bobjim.components.*" 
-					addedToStage="onComplete()"
 >
 	
 	<fx:Metadata>
@@ -25,38 +24,63 @@
 		
 		<bit101:TextArea id="log"/>
 		
+		<bit101:HBox x="100" y="40">
+			<bit101:Label text="Who:" width="100" />
+			<bit101:InputText id="appUserId" />
+			<bit101:InputText id="personalMessage" />
+			<bit101:PushButton label="Say" click="{talkTo(appUserId.text, personalMessage.text)}"/>
+		</bit101:HBox>
+		
 	</bit101:VBox>
 	
 	<fx:Script>
 		<![CDATA[
-			import agkanaatha.p2p.test.FriendsMeshTest;
-		
-			private var friendsMesh : FriendsMeshTest;
-				
-			private function onComplete() : void
-			{
-				friendsMesh = new FriendsMeshTest();
-				friendsMesh.dataReceived.add(messageReceived);
-			}
+			import agkanaatha.p2p.meshes.FriendsMesh;
+			import agkanaatha.p2p.rendezvous.RendezVousService;
 			
-			private function messageReceived(message : String, appUserId : String, peerId :String) : void
+			private var rendezVousService : RendezVousService;
+			private var friendsMesh : FriendsMesh;
+				
+			
+			private function messageReceived(peerId :String, message : Object) : void
 			{
-				log.text += message + " from " + appUserId + "(" + peerId +  ")";
+				log.text += message + " from " + friendsMesh.getAppUserId(peerId) + "\n";
 			}
 			
 			private function onLoginClicked() : void
 			{
 				if (login.text != "")
 				{
-					friendsMesh.initialize(login.text);
 					loginButton.mouseEnabled = false;
+					rendezVousService = new RendezVousService("rtmfp://p2p.rtmfp.net", "a6b44c10cf73bdb3f90e80c0-1d11f1ce71b5");
+					rendezVousService.connected.add(rendezVousEstablished);
+					rendezVousService.connect();
 				}
+			}
+			
+			private function rendezVousEstablished(peerId : String) : void
+			{
+				friendsMesh = new FriendsMesh(rendezVousService, login.text);
+				friendsMesh.dataReceived.add(messageReceived);
+				friendsMesh.initialize();
 			}
 				
 			private function sayHi(message : String):void
 			{
-				friendsMesh.broadcast(message);
+				if (friendsMesh != null)
+				{
+					friendsMesh.broadcast(message);
+				}
 			}
+			
+			private function talkTo(appUserId : String, message : String):void
+			{
+				if (friendsMesh != null)
+				{
+					friendsMesh.send(appUserId, message);
+				}
+			}
+			
 		]]>
 	</fx:Script>
 	

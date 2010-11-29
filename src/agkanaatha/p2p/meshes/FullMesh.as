@@ -20,11 +20,11 @@ package agkanaatha.p2p.meshes
 		public var dataReceived : Signal;
 		
 		// assume the rendez vous service is already initialized and connected
-		public function FullMesh(rendezVousService : RendezVousService, appUserId : String)
+		public function FullMesh(rendezVousService : RendezVousService)
 		{
 			dataReceived = new Signal(String, Object);
 			_rendezVousService = rendezVousService;
-			_friendStreams = new Vector.<NetStream>;
+			_peerStreams = new Vector.<NetStream>;
 		}
 		
 		public function initialize(peerIds : Vector.<String> = null) : void
@@ -40,8 +40,9 @@ package agkanaatha.p2p.meshes
 		}
 		
 		
-		private function update(peerIds : Vector.<String>) : void
+		public function update(peerIds : Vector.<String>) : void
 		{
+			var peerId : String;
 			var peerStream : NetStream;
 			var streamsToRemove : Array = new Array;
 			
@@ -71,8 +72,8 @@ package agkanaatha.p2p.meshes
 			{	
 				if (getPeerStream(peerId) == null)
 				{
-					peerStream = createFriendStream(peerId);		
-					addFriendStream(friendStream);
+					peerStream = createPeerStream(peerId);		
+					addPeerStream(peerStream);
 				}
 			}
 		}
@@ -105,7 +106,7 @@ package agkanaatha.p2p.meshes
 		private function removePeerStream(stream : NetStream) : void
 		{
 			stream.close();
-			_friendStreams.splice(_peerStreams.indexOf(stream),1);
+			_peerStreams.splice(_peerStreams.indexOf(stream),1);
 		}
 		
 		public function onReceive(data : Object) : void
@@ -123,11 +124,30 @@ package agkanaatha.p2p.meshes
 		
 		public function broadcast(message : Object) : void
 		{
+			var data : Object = createUniqueMessage(message);
+			_sendStream.send("onReceive",  data);
+		}
+		
+		public function send(peerId : String, message : Object) : void
+		{
+			for each (var peerStream : NetStream in _sendStream.peerStreams)
+			{
+				if (peerStream.farID == peerId)
+				{
+					var data : Object = createUniqueMessage(message);
+					peerStream.send("onReceive", data);
+					return;
+				}
+			}
+		}
+		
+		private function createUniqueMessage(message : Object) : Object
+		{
 			var data : Object = new Object;
 			data.uniqueId = StringUtils.generateRandomString(64);
 			data.message = message;
 			data.peerId = _rendezVousService.myPeerId;
-			_sendStream.send("onReceive",  data);
+			return data;
 		}
 	}
 }
